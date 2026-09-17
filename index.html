@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="ActFun3D: Task-Conditioned Scene Narrowing for Fine-Grained 3D Functional Grounding">
+  <meta name="keywords" content="ActFun3D, 3D Functional Grounding, SceneFun3D, 3D Scene Understanding, Multi-view Refinement">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ActFun3D: Task-Conditioned Scene Narrowing for Fine-Grained 3D Functional Grounding</title>
+
+  <!--
+  ============================================================================
+  Suggested media layout
+  ============================================================================
+  media/
+    teaser.png
+    pipeline.png
+    demo.mp4
+    figure5.png                  # Appendix qualitative comparison
+    figure6.png                  # Appendix narrowing/refinement visualization
+    results/
+      case01/
+        final_prediction.mp4
+        final_prediction.ply
+        final_scene.mp4
+        final_scene.ply
+      case02/ ...
+      case03/ ...
+      case04/ ...
+      case05/ ...
+      case06/ ...
+
+  Edit the CASES array near the bottom of this file to change prompts / paths.
+  PLY files are NOT downloaded through a button. They are loaded lazily only
+  when a visitor clicks "Interactive 3D", and can then be rotated/zoomed/panned.
+  ============================================================================
+  -->
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="image_src" href="./media/teaser.png">
+
+  <style>
+    :root {
+      --text: #111;
+      --muted: #666;
+      --line: #e8e8e8;
+      --panel: #fafafa;
+      --green: #22a447;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Noto Sans", sans-serif;
+      color: var(--text);
+      background: #fff;
+    }
+
+    .publication-title, .title, .subtitle {
+      font-family: "Google Sans", sans-serif;
+    }
+
+    .hero-body { padding-bottom: 2rem; }
+    .publication-title-main {
+      font-size: 3.2rem;
+      line-height: 1.05;
+      margin-bottom: .65rem !important;
+    }
+    .publication-title-sub {
+      font-size: 2rem;
+      line-height: 1.2;
+      font-weight: 600;
+      max-width: 1050px;
+      margin: 0 auto;
+    }
+    .publication-authors { margin-top: 1rem; }
+    .publication-links { margin-top: 1.05rem; }
+    .publication-links .button { margin: .25rem; }
+
+    .section { padding-top: 3.1rem; padding-bottom: 3.1rem; }
+    .section.compact-section { padding-top: 2.35rem; padding-bottom: 2.35rem; }
+    .section-title { margin-bottom: 1.35rem !important; }
+
+    .section-note,
+    .section-note p,
+    .content.has-text-justified,
+    .content.has-text-justified p,
+    .figure-caption,
+    .black-table th,
+    .black-table td {
+      color: #000 !important;
+    }
+
+    .section-note {
+      font-size: 1.01rem;
+      line-height: 1.72;
+      margin-top: .7rem;
+    }
+
+    .figure-caption {
+      font-size: .98rem;
+      line-height: 1.67;
+      margin-top: .75rem;
+      text-align: left;
+    }
+
+    .paper-figure {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ededed;
+      display: block;
+      background: #fff;
+    }
+
+    .teaser-wrap { max-width: 1000px; margin: 0 auto; }
+    .method-wrap { max-width: 1080px; margin: 0 auto; }
+    .figure-wide { max-width: 1180px; margin: 0 auto; }
+
+    .video-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      overflow: hidden;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #000;
+      box-shadow: 0 4px 20px rgba(0,0,0,.04);
+    }
+    .video-wrap video { width: 100%; display: block; }
+
+    /* Metric strip */
+    .metric-strip { margin-top: 1.2rem; }
+    .metric-card {
+      height: 100%;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      padding: 1.05rem .9rem;
+      text-align: center;
+    }
+    .metric-value {
+      font-family: "Google Sans", sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #222;
+    }
+    .metric-label {
+      margin-top: .45rem;
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.35;
+    }
+
+    /* Tables follow the style of the previous project page. */
+    .black-table {
+      font-size: .95rem;
+      background: #fff;
+    }
+    .black-table th,
+    .black-table td {
+      vertical-align: middle !important;
+      text-align: center;
+    }
+    .black-table th:first-child,
+    .black-table td:first-child {
+      text-align: left;
+    }
+    .best { font-weight: 700; }
+    .second { text-decoration: underline; text-underline-offset: 2px; }
+    .table-caption {
+      color: #000;
+      font-size: .98rem;
+      line-height: 1.65;
+      margin: .65rem 0 .8rem 0;
+    }
+    .table-block { margin-top: 1.2rem; }
+    .table-subtitle {
+      font-family: "Google Sans", sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-align: center;
+      margin: .85rem 0 .6rem 0;
+    }
+
+    /* Dynamic result explorer */
+    .results-explorer {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1.25rem;
+      background: #fff;
+      box-shadow: 0 4px 20px rgba(0,0,0,.03);
+    }
+    .case-tabs {
+      display: flex;
+      gap: .48rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1.1rem;
+    }
+    .case-tab {
+      border: 1px solid #d7d7d7;
+      background: #fff;
+      color: #222;
+      border-radius: 999px;
+      padding: .46rem .82rem;
+      cursor: pointer;
+      font-size: .9rem;
+      transition: all .16s ease;
+    }
+    .case-tab:hover { border-color: #888; }
+    .case-tab.is-active {
+      border-color: #222;
+      background: #222;
+      color: #fff;
+    }
+    .task-box {
+      max-width: 930px;
+      margin: 0 auto 1.1rem auto;
+      padding: .82rem 1rem;
+      border-left: 3px solid #222;
+      background: #fafafa;
+      border-radius: 4px;
+      text-align: left;
+    }
+    .task-kicker {
+      font-size: .77rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #777;
+      font-weight: 700;
+      margin-bottom: .2rem;
+    }
+    .task-text {
+      font-family: "Google Sans", sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .result-panel {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: .8rem;
+      background: #fff;
+      height: 100%;
+    }
+    .result-panel-title {
+      font-family: "Google Sans", sans-serif;
+      font-size: 1.04rem;
+      font-weight: 700;
+      margin-bottom: .55rem;
+      text-align: center;
+    }
+    .view-switch {
+      display: flex;
+      justify-content: center;
+      gap: .45rem;
+      margin-bottom: .62rem;
+    }
+    .view-switch .button {
+      min-width: 112px;
+    }
+    .view-switch .button.is-selected {
+      background: #222;
+      border-color: #222;
+      color: #fff;
+    }
+
+    .media-stage {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 7px;
+      overflow: hidden;
+      background: #f7f7f7;
+      border: 1px solid #ededed;
+      position: relative;
+    }
+    .result-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: #000;
+    }
+    .ply-view {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: none;
+      background: #fff;
+    }
+    .ply-view canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+    .ply-status {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: .9rem;
+      color: #666;
+      background: rgba(255,255,255,.92);
+      padding: .48rem .68rem;
+      border-radius: 5px;
+      pointer-events: none;
+      text-align: center;
+      max-width: 85%;
+    }
+    .viewer-toolbar {
+      position: absolute;
+      top: .55rem;
+      right: .55rem;
+      z-index: 4;
+      display: none;
+    }
+    .viewer-toolbar .button {
+      box-shadow: 0 1px 6px rgba(0,0,0,.08);
+    }
+    .viewer-hint {
+      margin-top: .48rem;
+      text-align: center;
+      font-size: .82rem;
+      color: #777;
+      min-height: 1.2em;
+    }
+    .legend-line {
+      margin-top: .85rem;
+      text-align: center;
+      color: #555;
+      font-size: .9rem;
+    }
+    .green-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--green);
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      vertical-align: 0;
+    }
+
+    details.analysis-details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: .85rem 1rem;
+      margin-top: 1.1rem;
+      background: #fff;
+    }
+    details.analysis-details summary {
+      cursor: pointer;
+      font-family: "Google Sans", sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #111;
+    }
+    details.analysis-details[open] summary { margin-bottom: .75rem; }
+
+    .footer-note {
+      font-size: .94rem;
+      color: #000;
+      line-height: 1.65;
+    }
+
+    .compact-table {
+      width: 95%;
+      margin: 0 auto;
+    }
+
+    .compact-table th:first-child,
+    .compact-table td:first-child {
+      width: 50%;
+    }
+
+    .compact-table th:not(:first-child),
+    .compact-table td:not(:first-child) {
+      width: 16.67%;
+    }
+    .analysis-details .table-container {
+      overflow-x: visible;
+    }
+
+    @media (max-width: 768px) {
+      .publication-title-main { font-size: 2.45rem; }
+      .publication-title-sub { font-size: 1.45rem; }
+      .section { padding-top: 2.45rem; padding-bottom: 2.45rem; }
+      .results-explorer { padding: .82rem; }
+      .black-table { font-size: .86rem; }
+      .view-switch .button { min-width: 95px; }
+    }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+<!-- ========================================================================
+     HERO
+============================================================================ -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop has-text-centered">
+      <h1 class="title publication-title publication-title-main">ActFun3D</h1>
+      <h2 class="title publication-title publication-title-sub">
+        Task-Conditioned Scene Narrowing for Fine-Grained 3D Functional Grounding
+      </h2>
+
+      <div class="is-size-5 publication-authors">
+        <span class="author-block">Anonymous Submission</span>
+      </div>
+
+      <div class="publication-links">
+        <!-- TODO: replace # with the anonymous repository URL. -->
+        <a href="https://anonymous.4open.science/r/ActFun3D"
+           class="external-link button is-normal is-rounded is-dark"
+           target="_blank" rel="noopener noreferrer">
+          <span class="icon"><i class="fas fa-code"></i></span>
+          <span>Anonymous Code</span>
+        </a>
+
+        <a href="#demo" class="button is-normal is-rounded is-dark">
+          <span class="icon"><i class="fas fa-play"></i></span>
+          <span>Demo</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     TEASER
+============================================================================ -->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="teaser-wrap">
+      <figure class="image">
+        <img class="paper-figure" src="./media/teaser.png" alt="ActFun3D teaser figure">
+      </figure>
+      <p class="figure-caption">
+        <strong>Task-conditioned scene narrowing for fine-grained 3D functional grounding.</strong>
+        ActFun3D first reduces the global 3D search space while retaining task-relevant support, then resolves
+        the fine-grained functional target and refines residual ambiguity using selective visual evidence.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     ABSTRACT
+============================================================================ -->
+<section class="section compact-section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3 section-title">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Fine-grained 3D functional grounding aims to identify the physical region that supports a natural-language task, such as the handle to pull, the button to press, or the control to adjust. This is particularly challenging in large 3D scenes, where task-relevant regions occupy only a small fraction of the scene and are easily confused with visually or geometrically similar candidates. We introduce <strong>ActFun3D</strong>, a task-conditioned coarse-to-fine framework that uses task semantics to reduce the effective search space before fine-grained grounding. Given a task, ActFun3D first extracts structured functional semantics describing the target, its context, affordance, and spatial constraints, and uses them to localize a high-recall candidate region over language-aligned 3D features. A trainable local 3D grounder then integrates local geometry, appearance, multi-view visual features, and task semantics to predict the task-relevant functional region at the point level. To further resolve ambiguous predictions, ActFun3D retrieves a compact set of informative posed RGB-D views and projects verified visual evidence back into 3D for multi-view refinement. Experiments demonstrate that ActFun3D achieves state-of-the-art performance in fine-grained 3D functional grounding, improving AP50 by <strong>3.9 points</strong>. Further analysis shows that task-conditioned narrowing retains <strong>94.2%</strong> of target points within only <strong>15.9%</strong> of the search space, with additional gains from selective multi-view refinement.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     DEMO VIDEO
+============================================================================ -->
+<section class="section" id="demo">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered section-title">Demo</h2>
+    <div class="video-wrap">
+      <video controls playsinline preload="metadata">
+        <source src="./media/demo.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+    <p class="section-note has-text-centered" style="max-width: 880px; margin-left:auto; margin-right:auto;">
+      The demo presents task-conditioned scene narrowing, local functional grounding,
+      evidence-view retrieval and verification, and final 3D refinement.
+    </p>
+  </div>
+</section>
+
+<!-- ========================================================================
+     METHOD
+============================================================================ -->
+<section class="section compact-section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered section-title">Method Overview</h2>
+    <div class="method-wrap">
+      <figure class="image">
+        <img class="paper-figure" src="./media/pipeline.png" alt="ActFun3D method overview">
+      </figure>
+      <p class="figure-caption">
+        <strong>Overview of ActFun3D.</strong> A structured functional query narrows the full scene to a compact,
+        high-recall search region. The LocalFunctionalGrounder predicts the fine-grained target within this
+        region, and selected posed RGB-D observations provide verified evidence for conservative 3D refinement.
+      </p>
+    </div>
+
+    <div class="columns is-centered metric-strip">
+      <div class="column is-4">
+        <div class="metric-card">
+          <div class="metric-value">15.9%</div>
+          <div class="metric-label">Search-space ratio after structured scene narrowing</div>
+        </div>
+      </div>
+      <div class="column is-4">
+        <div class="metric-card">
+          <div class="metric-value">94.2%</div>
+          <div class="metric-label">Target retention inside the narrowed region</div>
+        </div>
+      </div>
+      <div class="column is-4">
+        <div class="metric-card">
+          <div class="metric-value">30.8</div>
+          <div class="metric-label">AP<sub>50</sub> of the full ActFun3D pipeline</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     DYNAMIC / INTERACTIVE RESULTS
+     Six representative examples are shown rather than all available cases.
+============================================================================ -->
+<section class="section" id="dynamic-results">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered section-title">Dynamic Scene Narrowing &amp; Refinement</h2>
+    <div class="section-note has-text-justified" style="max-width: 960px; margin-left:auto; margin-right:auto;">
+      <p>
+        We provide six representative dynamic examples corresponding to the additional scene-narrowing and
+        refinement visualizations. For each task, <strong>Functional Prediction</strong> isolates the predicted
+        functional points, while <strong>Full-Scene Localization</strong> places the same prediction in the complete
+        scene. Switch from the 8-second video to <strong>Interactive 3D</strong> to directly inspect the PLY result.
+        Green points denote the predicted functional region.
+      </p>
+    </div>
+
+    <div class="results-explorer" style="margin-top: 1.2rem;">
+      <div id="caseTabs" class="case-tabs" aria-label="Dynamic result examples"></div>
+
+      <div class="task-box">
+        <div class="task-kicker">Task</div>
+        <div id="taskText" class="task-text"></div>
+      </div>
+
+      <div class="columns is-variable is-4">
+        <div class="column is-6">
+          <div class="result-panel">
+            <div class="result-panel-title">Functional Prediction</div>
+            <div class="view-switch">
+              <button id="predictionVideoBtn" class="button is-small is-rounded is-selected">
+                <span class="icon"><i class="fas fa-play"></i></span><span>Video</span>
+              </button>
+              <button id="prediction3DBtn" class="button is-small is-rounded">
+                <span class="icon"><i class="fas fa-cube"></i></span><span>Interactive 3D</span>
+              </button>
+            </div>
+            <div class="media-stage">
+              <video id="predictionVideo" class="result-video" autoplay muted loop playsinline controls preload="metadata"></video>
+              <div id="predictionPlyView" class="ply-view">
+                <div id="predictionPlyStatus" class="ply-status">Click Interactive 3D to load the PLY.</div>
+                <div id="predictionToolbar" class="viewer-toolbar">
+                  <button id="predictionReset" class="button is-small is-light" title="Reset view">
+                    <span class="icon is-small"><i class="fas fa-arrows-rotate"></i></span>
+                    <span>Reset</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div id="predictionHint" class="viewer-hint">6-second visualization of the predicted functional points.</div>
+          </div>
+        </div>
+
+        <div class="column is-6">
+          <div class="result-panel">
+            <div class="result-panel-title">Full-Scene Localization</div>
+            <div class="view-switch">
+              <button id="sceneVideoBtn" class="button is-small is-rounded is-selected">
+                <span class="icon"><i class="fas fa-play"></i></span><span>Video</span>
+              </button>
+              <button id="scene3DBtn" class="button is-small is-rounded">
+                <span class="icon"><i class="fas fa-cube"></i></span><span>Interactive 3D</span>
+              </button>
+            </div>
+            <div class="media-stage">
+              <video id="sceneVideo" class="result-video" autoplay muted loop playsinline controls preload="metadata"></video>
+              <div id="scenePlyView" class="ply-view">
+                <div id="scenePlyStatus" class="ply-status">Click Interactive 3D to load the PLY.</div>
+                <div id="sceneToolbar" class="viewer-toolbar">
+                  <button id="sceneReset" class="button is-small is-light" title="Reset view">
+                    <span class="icon is-small"><i class="fas fa-arrows-rotate"></i></span>
+                    <span>Reset</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div id="sceneHint" class="viewer-hint">8-second visualization in the complete 3D scene.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend-line">
+        <span class="green-dot"></span>Green points indicate the predicted functional region.
+        In Interactive 3D: drag to rotate, scroll to zoom, right-drag to pan.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     QUANTITATIVE RESULTS
+============================================================================ -->
+<section class="section compact-section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered section-title">Quantitative Results</h2>
+
+    <div class="table-block">
+      <p class="table-caption">
+        <strong>Main comparison on the SceneFun3D validation split.</strong>
+        Best results are shown in <strong>bold</strong>, and second-best results are <u>underlined</u>.
+      </p>
+      <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable is-bordered is-narrow black-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Task-specific Train.</th>
+              <th>AP<sub>50</sub> ↑</th>
+              <th>AP<sub>25</sub> ↑</th>
+              <th>mIoU ↑</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>OpenMask3D</td><td>No</td><td>0.2</td><td>0.4</td><td>0.2</td></tr>
+            <tr><td>LERF</td><td>No</td><td>0.0</td><td>0.0</td><td>0.0</td></tr>
+            <tr><td>OpenIns3D</td><td>No</td><td>0.0</td><td>0.0</td><td>0.1</td></tr>
+            <tr><td>Fun3DU</td><td>No</td><td>16.9</td><td class="second">33.3</td><td>15.2</td></tr>
+            <tr><td>AffordBot</td><td>Yes</td><td>20.9</td><td>24.8</td><td>14.4</td></tr>
+            <tr><td>TASA</td><td>Yes</td><td class="second">26.9</td><td>28.6</td><td class="second">19.7</td></tr>
+            <tr>
+              <td><strong>ActFun3D (Ours)</strong></td><td><strong>Yes</strong></td>
+              <td class="best">30.8</td><td class="best">41.5</td><td class="best">23.0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="table-block">
+      <p class="table-caption">
+        <strong>Effect of task-conditioned scene narrowing.</strong>
+        Lower Search-Space Ratio (SSR) indicates a smaller retained region, while higher Target Retention (TR)
+        indicates better preservation of the functional target.
+      </p>
+      <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable is-bordered is-narrow black-table">
+          <thead>
+            <tr>
+              <th>Strategy</th>
+              <th>SSR ↓</th>
+              <th>TR ↑</th>
+              <th>AP<sub>50</sub> ↑</th>
+              <th>mIoU ↑</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Whole Scene</td><td>100.0</td><td>100.0</td><td>1.0</td><td>1.4</td></tr>
+            <tr><td>Raw Task Query</td><td>24.6</td><td>80.8</td><td>10.7</td><td>8.9</td></tr>
+            <tr><td>Functional Object Query</td><td>18.3</td><td>89.4</td><td>19.8</td><td>13.5</td></tr>
+            <tr>
+              <td><strong>Structured Functional Query</strong></td>
+              <td class="best">15.9</td><td class="best">94.2</td><td class="best">24.1</td><td class="best">19.1</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     ADDITIONAL QUALITATIVE RESULTS
+     Use the two fuller appendix figures rather than repeating the smaller
+     main-paper qualitative figures.
+============================================================================ -->
+<section class="section compact-section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered section-title">Additional Qualitative Results</h2>
+
+    <div class="figure-wide">
+      <figure class="image">
+        <img class="paper-figure" src="./media/figure5.png" alt="Additional qualitative comparison on SceneFun3D">
+      </figure>
+      <p class="figure-caption">
+        <strong>Additional qualitative comparison on SceneFun3D.</strong>
+        The full comparison includes generic open-vocabulary baselines and recent functionality-grounding methods.
+        ActFun3D generally produces more compact and spatially aligned responses around fine-grained interaction regions,
+        particularly for small targets and scenes containing multiple plausible candidates.
+      </p>
+    </div>
+
+    <div class="figure-wide" style="margin-top: 2rem;">
+      <figure class="image">
+        <img class="paper-figure" src="./media/figure6.png" alt="Additional scene narrowing and refinement visualizations">
+      </figure>
+      <p class="figure-caption">
+        <strong>Additional visualizations of task-conditioned scene narrowing and multi-view refinement.</strong>
+        The narrowed region preserves local task-relevant context while removing most irrelevant scene content.
+        Selected visual evidence then suppresses unsupported responses and resolves residual ambiguity in the initial 3D prediction.
+        The dynamic examples above provide video and interactive 3D versions of representative cases from this analysis.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     MULTI-VIEW REFINEMENT ABLATION
+============================================================================ -->
+<section class="section compact-section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered section-title">Multi-View Refinement Analysis</h2>
+
+    <p class="table-caption">
+      <strong>Component ablation of multi-view visual refinement.</strong>
+      All variants start from the same initial 3D prediction and use the same geometry-guided view retrieval.
+    </p>
+    <div class="table-container">
+      <table class="table is-fullwidth is-striped is-hoverable is-bordered is-narrow black-table">
+        <thead>
+          <tr>
+            <th>Configuration</th>
+            <th>SAM2</th>
+            <th>Verifier</th>
+            <th>Pos./Neg.</th>
+            <th>AP<sub>50</sub> ↑</th>
+            <th>AP<sub>25</sub> ↑</th>
+            <th>mIoU ↑</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Initial 3D</td><td>✗</td><td>–</td><td>✗</td><td>24.1</td><td>26.2</td><td>19.1</td></tr>
+          <tr><td>Visual Mask Refinement</td><td>✓</td><td>None</td><td>✗</td><td>25.7</td><td>29.0</td><td>20.7</td></tr>
+          <tr><td>Geometry Verification</td><td>✓</td><td>Geometry</td><td>✗</td><td>26.2</td><td>30.6</td><td>20.9</td></tr>
+          <tr><td>VLM Verification</td><td>✓</td><td>VLM</td><td>✗</td><td>29.6</td><td>38.3</td><td>22.4</td></tr>
+          <tr><td><strong>Full ActFun3D</strong></td><td><strong>✓</strong></td><td><strong>VLM</strong></td><td><strong>✓</strong></td><td class="best">30.8</td><td class="best">41.5</td><td class="best">23.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="section-note has-text-justified">
+      Visual masks provide complementary 2D evidence beyond the initial 3D prediction, task-aware verification filters
+      ambiguous observations, and visibility-aware positive/negative evidence fusion further improves the final grounding.
+    </p>
+  </div>
+</section>
+
+<!-- ========================================================================
+     ADDITIONAL APPENDIX ABLATIONS
+     Kept compact with collapsible blocks so the project page remains readable.
+============================================================================ -->
+<section class="section compact-section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered section-title">Additional Analysis</h2>
+    <div class="section-note has-text-justified">
+      <p>
+        We include the most informative appendix ablations below. They complement the main results by isolating the
+        LocalFunctionalGrounder design and the evidence-view retrieval strategy.
+      </p>
+    </div>
+
+    <details class="analysis-details" open>
+      <summary>LocalFunctionalGrounder</summary>
+
+      <div class="table-subtitle">(a) Model Capacity</div>
+      <div class="table-container">
+        <table class="table is-striped is-hoverable is-bordered is-narrow black-table compact-table">
+          <thead>
+            <tr><th>Configuration</th><th>AP<sub>50</sub> ↑</th><th>AP<sub>25</sub> ↑</th><th>mIoU ↑</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Lightweight (256/4/8/64)</td><td>21.7</td><td>25.5</td><td>18.0</td></tr>
+            <tr><td><strong>Default (512/8/16/128)</strong></td><td class="best">24.1</td><td class="best">26.2</td><td class="best">19.1</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-subtitle">(b) Training Region Strategy</div>
+      <div class="table-container">
+        <table class="table is-striped is-hoverable is-bordered is-narrow black-table compact-table">
+          <thead>
+            <tr><th>Training Region</th><th>AP<sub>50</sub> ↑</th><th>AP<sub>25</sub> ↑</th><th>mIoU ↑</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>GT-centered Only</td><td>20.7</td><td>23.4</td><td>17.3</td></tr>
+            <tr><td>Narrowing-region Only</td><td>22.8</td><td>24.9</td><td>18.3</td></tr>
+            <tr><td><strong>GT-centered + Narrowing-region</strong></td><td class="best">24.1</td><td class="best">26.2</td><td class="best">19.1</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details class="analysis-details" open>
+      <summary>Evidence-View Retrieval</summary>
+
+      <div class="table-subtitle">(a) View Retrieval Strategy</div>
+      <div class="table-container">
+        <table class="table is-striped is-hoverable is-bordered is-narrow black-table compact-table">
+          <thead>
+            <tr><th>Strategy</th><th>AP<sub>50</sub> ↑</th><th>AP<sub>25</sub> ↑</th><th>mIoU ↑</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Initial 3D</td><td>24.1</td><td>26.2</td><td>19.1</td></tr>
+            <tr><td>Random</td><td>27.7</td><td>33.3</td><td>20.8</td></tr>
+            <tr><td>Uniform Sampling</td><td>28.6</td><td>35.4</td><td>21.3</td></tr>
+            <tr><td>Geometry Score</td><td>29.9</td><td>39.2</td><td>22.6</td></tr>
+            <tr><td><strong>Geometry Score + Diversity</strong></td><td class="best">30.8</td><td class="best">41.5</td><td class="best">23.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-subtitle">(b) View Budget</div>
+      <div class="table-container">
+        <table class="table is-striped is-hoverable is-bordered is-narrow black-table compact-table">
+          <thead>
+            <tr><th>K</th><th>AP<sub>50</sub> ↑</th><th>AP<sub>25</sub> ↑</th><th>mIoU ↑</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>3</td><td>28.1</td><td>34.6</td><td>21.9</td></tr>
+            <tr><td>6</td><td>29.4</td><td>37.3</td><td>21.8</td></tr>
+            <tr><td><strong>12</strong></td><td class="best">30.8</td><td class="second">41.5</td><td class="best">23.0</td></tr>
+            <tr><td>24</td><td class="second">30.4</td><td class="best">41.6</td><td class="second">22.9</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="figure-caption">
+        The default budget is <strong>K=12</strong>. The K=24 row is a sensitivity analysis with the default retrieval cap relaxed.
+      </p>
+    </details>
+  </div>
+</section>
+
+<!-- ========================================================================
+     FOOTER
+============================================================================ -->
+<section class="section" style="padding-top: 1.4rem; padding-bottom: 2rem;">
+  <div class="container is-max-desktop">
+    <div class="content has-text-centered footer-note">
+      <p>
+        Anonymous project page for ICLR 2027 review. The review-stage repository contains the key implementation of
+        ActFun3D but is not the complete codebase; the full training and evaluation repository will be released upon acceptance.
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ===========================================================================
+   EDIT ONLY THIS ARRAY TO CHANGE THE SIX REPRESENTATIVE CASES.
+   The six current task strings are placeholders based on representative
+   appendix examples; replace them with the exact prompts / file names you use.
+============================================================================ */
+const CASES = [
+  {
+    short: "Drawer",
+    task: "Open the bottom drawer of the cabinet with the TV on top.",
+    predictionVideo: "./media/case01/final_prediction.mp4",
+    predictionPly:   "./media/case01/final_prediction.ply",
+    sceneVideo:      "./media/case01/final_scene.mp4",
+    scenePly:        "./media/case01/final_scene.ply"
+  },
+  {
+    short: "Remote",
+    task: "Turn on the TV using the remote control on the table.",
+    predictionVideo: "./media/case02/final_prediction.mp4",
+    predictionPly:   "./media/case02/final_prediction.ply",
+    sceneVideo:      "./media/case02/final_scene.mp4",
+    scenePly:        "./media/case02/final_scene.ply"
+  },
+  {
+    short: "Remote_v2",
+    task: "Turn on the TV using the remote on the glass coffee table.",
+    predictionVideo: "./media/case03/final_prediction.mp4",
+    predictionPly:   "./media/case03/final_prediction.ply",
+    sceneVideo:      "./media/case03/final_scene.mp4",
+    scenePly:        "./media/case03/final_scene.ply"
+  },
+  {
+    short: "Telephone",
+    task: "Dial a number on the telephone on the nightstand.",
+    predictionVideo: "./media/case04/final_prediction.mp4",
+    predictionPly:   "./media/case04/final_prediction.ply",
+    sceneVideo:      "./media/case04/final_scene.mp4",
+    scenePly:        "./media/case04/final_scene.ply"
+  },
+  {
+    short: "Closet",
+    task: "Open the right door of the closet near the window.",
+    predictionVideo: "./media/case05/final_prediction.mp4",
+    predictionPly:   "./media/case05/final_prediction.ply",
+    sceneVideo:      "./media/case05/final_scene.mp4",
+    scenePly:        "./media/case05/final_scene.ply"
+  },
+  {
+    short: "Drawer_v2",
+    task: "Open the drawer of the wooden table with the picture frame and lamp on top.",
+    predictionVideo: "./media/case06/final_prediction.mp4",
+    predictionPly:   "./media/case06/final_prediction.ply",
+    sceneVideo:      "./media/case06/final_scene.mp4",
+    scenePly:        "./media/case06/final_scene.ply"
+  }
+];
+
+const caseTabs = document.getElementById("caseTabs");
+const taskText = document.getElementById("taskText");
+const predictionVideo = document.getElementById("predictionVideo");
+const sceneVideo = document.getElementById("sceneVideo");
+
+let currentCaseIndex = 0;
+
+function buildCaseTabs() {
+  CASES.forEach((item, index) => {
+    const btn = document.createElement("button");
+    btn.className = "case-tab" + (index === 0 ? " is-active" : "");
+    btn.textContent = `${String(index + 1).padStart(2, "0")} · ${item.short}`;
+    btn.addEventListener("click", () => setCase(index));
+    caseTabs.appendChild(btn);
+  });
+}
+
+function updateTabState(index) {
+  [...caseTabs.children].forEach((tab, i) => tab.classList.toggle("is-active", i === index));
+}
+
+function safePlay(video) {
+  const p = video.play();
+  if (p && typeof p.catch === "function") p.catch(() => {});
+}
+
+function setCase(index) {
+  currentCaseIndex = index;
+  const item = CASES[index];
+  updateTabState(index);
+  taskText.textContent = item.task;
+
+  predictionVideo.src = item.predictionVideo;
+  sceneVideo.src = item.sceneVideo;
+  predictionVideo.load();
+  sceneVideo.load();
+
+  resetMediaPanel("prediction");
+  resetMediaPanel("scene");
+  safePlay(predictionVideo);
+  safePlay(sceneVideo);
+}
+
+buildCaseTabs();
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { PLYLoader } from "three/addons/loaders/PLYLoader.js";
+
+class InlinePlyViewer {
+  constructor(container, status, toolbar, kind = "scene") {
+    this.container = container;
+    this.status = status;
+    this.toolbar = toolbar;
+    this.kind = kind;
+    this.loadedPath = null;
+    this.frameId = null;
+    this.resizeObserver = null;
+    this.initialCamera = null;
+    this.initialTarget = null;
+    this.initThree();
+  }
+
+  initThree() {
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0xffffff);
+
+    this.camera = new THREE.PerspectiveCamera(45, 1, 0.001, 100000);
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.container.insertBefore(this.renderer.domElement, this.container.firstChild);
+
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.08;
+    this.controls.screenSpacePanning = true;
+
+    const ambient = new THREE.AmbientLight(0xffffff, 1.0);
+    this.scene.add(ambient);
+
+    this.resizeObserver = new ResizeObserver(() => this.resize());
+    this.resizeObserver.observe(this.container);
+    this.resize();
+
+    const animate = () => {
+      this.frameId = requestAnimationFrame(animate);
+      this.controls.update();
+      this.renderer.render(this.scene, this.camera);
+    };
+    animate();
+  }
+
+  resize() {
+    const w = Math.max(this.container.clientWidth, 1);
+    const h = Math.max(this.container.clientHeight, 1);
+    this.renderer.setSize(w, h, false);
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+  }
+
+  clearPoints() {
+    if (!this.points) return;
+    this.scene.remove(this.points);
+    if (this.points.geometry) this.points.geometry.dispose();
+    if (this.points.material) this.points.material.dispose();
+    this.points = null;
+  }
+
+  async load(path) {
+    if (this.loadedPath === path && this.points) return;
+    this.loadedPath = path;
+    this.clearPoints();
+    this.status.style.display = "block";
+    this.status.textContent = "Loading PLY...";
+    this.toolbar.style.display = "none";
+
+    const loader = new PLYLoader();
+    loader.load(
+      path,
+      (geometry) => {
+        geometry.computeBoundingBox();
+        geometry.computeBoundingSphere();
+
+        const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+        geometry.translate(-center.x, -center.y, -center.z);
+        geometry.computeBoundingSphere();
+
+        const radius = Math.max(geometry.boundingSphere.radius, 1e-4);
+        const hasColors = geometry.hasAttribute("color");
+        const baseSize = this.kind === "prediction" ? 0.0050 : 0.0027;
+        const pointSize = Math.max(radius * baseSize, radius * 0.0007);
+
+        const material = new THREE.PointsMaterial({
+          size: pointSize,
+          sizeAttenuation: true,
+          vertexColors: hasColors,
+          color: hasColors ? 0xffffff : (this.kind === "prediction" ? 0x22a447 : 0x9a9a9a)
+        });
+
+        this.points = new THREE.Points(geometry, material);
+        this.scene.add(this.points);
+
+        const dist = radius * 2.45;
+        this.camera.near = Math.max(radius / 10000, 0.0001);
+        this.camera.far = Math.max(radius * 50, 100);
+        this.camera.position.set(dist * 0.75, dist * 0.48, dist);
+        this.camera.updateProjectionMatrix();
+        this.controls.target.set(0, 0, 0);
+        this.controls.minDistance = radius * 0.05;
+        this.controls.maxDistance = radius * 20;
+        this.controls.update();
+
+        this.initialCamera = this.camera.position.clone();
+        this.initialTarget = this.controls.target.clone();
+        this.status.style.display = "none";
+        this.toolbar.style.display = "block";
+        this.resize();
+      },
+      undefined,
+      (err) => {
+        console.error(err);
+        this.status.style.display = "block";
+        this.status.textContent = "Unable to load this PLY. Check the file path and host the page over HTTP/HTTPS.";
+        this.toolbar.style.display = "none";
+      }
+    );
+  }
+
+  reset() {
+    if (!this.initialCamera || !this.initialTarget) return;
+    this.camera.position.copy(this.initialCamera);
+    this.controls.target.copy(this.initialTarget);
+    this.controls.update();
+  }
+
+  invalidate() {
+    this.loadedPath = null;
+    this.clearPoints();
+    this.status.style.display = "block";
+    this.status.textContent = "Click Interactive 3D to load the PLY.";
+    this.toolbar.style.display = "none";
+  }
+}
+
+const predictionView = document.getElementById("predictionPlyView");
+const sceneView = document.getElementById("scenePlyView");
+const predictionStatus = document.getElementById("predictionPlyStatus");
+const sceneStatus = document.getElementById("scenePlyStatus");
+const predictionToolbar = document.getElementById("predictionToolbar");
+const sceneToolbar = document.getElementById("sceneToolbar");
+
+const predictionViewer = new InlinePlyViewer(predictionView, predictionStatus, predictionToolbar, "prediction");
+const sceneViewer = new InlinePlyViewer(sceneView, sceneStatus, sceneToolbar, "scene");
+
+const predictionVideoBtn = document.getElementById("predictionVideoBtn");
+const prediction3DBtn = document.getElementById("prediction3DBtn");
+const sceneVideoBtn = document.getElementById("sceneVideoBtn");
+const scene3DBtn = document.getElementById("scene3DBtn");
+const predictionHint = document.getElementById("predictionHint");
+const sceneHint = document.getElementById("sceneHint");
+
+function selectButton(videoBtn, plyBtn, mode) {
+  videoBtn.classList.toggle("is-selected", mode === "video");
+  plyBtn.classList.toggle("is-selected", mode === "ply");
+}
+
+function showPrediction(mode) {
+  if (mode === "video") {
+    predictionVideo.style.display = "block";
+    predictionView.style.display = "none";
+    selectButton(predictionVideoBtn, prediction3DBtn, "video");
+    predictionHint.textContent = "8-second visualization of the predicted functional points.";
+    safePlay(predictionVideo);
+  } else {
+    predictionVideo.pause();
+    predictionVideo.style.display = "none";
+    predictionView.style.display = "block";
+    selectButton(predictionVideoBtn, prediction3DBtn, "ply");
+    predictionHint.textContent = "Drag to rotate · Scroll to zoom · Right-drag to pan.";
+    requestAnimationFrame(() => predictionViewer.resize());
+    predictionViewer.load(CASES[currentCaseIndex].predictionPly);
+  }
+}
+
+function showScene(mode) {
+  if (mode === "video") {
+    sceneVideo.style.display = "block";
+    sceneView.style.display = "none";
+    selectButton(sceneVideoBtn, scene3DBtn, "video");
+    sceneHint.textContent = "8-second visualization in the complete 3D scene.";
+    safePlay(sceneVideo);
+  } else {
+    sceneVideo.pause();
+    sceneVideo.style.display = "none";
+    sceneView.style.display = "block";
+    selectButton(sceneVideoBtn, scene3DBtn, "ply");
+    sceneHint.textContent = "Drag to rotate · Scroll to zoom · Right-drag to pan.";
+    requestAnimationFrame(() => sceneViewer.resize());
+    sceneViewer.load(CASES[currentCaseIndex].scenePly);
+  }
+}
+
+window.resetMediaPanel = function(kind) {
+  if (kind === "prediction") {
+    predictionViewer.invalidate();
+    showPrediction("video");
+  } else {
+    sceneViewer.invalidate();
+    showScene("video");
+  }
+};
+
+predictionVideoBtn.addEventListener("click", () => showPrediction("video"));
+prediction3DBtn.addEventListener("click", () => showPrediction("ply"));
+sceneVideoBtn.addEventListener("click", () => showScene("video"));
+scene3DBtn.addEventListener("click", () => showScene("ply"));
+document.getElementById("predictionReset").addEventListener("click", () => predictionViewer.reset());
+document.getElementById("sceneReset").addEventListener("click", () => sceneViewer.reset());
+
+// Initialize the first case only after the module has registered resetMediaPanel.
+setCase(0);
+</script>
+
+</body>
+</html>
