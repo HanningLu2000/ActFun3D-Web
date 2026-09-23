@@ -464,7 +464,7 @@
         <h2 class="title is-3 section-title">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            Fine-grained 3D functional grounding aims to identify the physical region that supports a natural-language task, such as the handle to pull, the button to press, or the control to adjust. This is particularly challenging in large 3D scenes, where task-relevant regions occupy only a small fraction of the scene and are easily confused with visually or geometrically similar candidates. We introduce <strong>ActFun3D</strong>, a task-conditioned coarse-to-fine framework that uses task semantics to reduce the effective search space before fine-grained grounding. Given a task, ActFun3D first extracts structured functional semantics describing the target, its context, affordance, and spatial constraints, and uses them to localize a high-recall candidate region over language-aligned 3D features. A trainable local 3D grounder then integrates local geometry, appearance, multi-view visual features, and task semantics to predict the task-relevant functional region at the point level. To further resolve ambiguous predictions, ActFun3D retrieves a compact set of informative posed RGB-D views and projects verified visual evidence back into 3D for multi-view refinement. Experiments demonstrate that ActFun3D achieves state-of-the-art performance in fine-grained 3D functional grounding, improving AP50 by <strong>3.9 points</strong>. Further analysis shows that task-conditioned narrowing retains <strong>94.2%</strong> of target points within only <strong>15.9%</strong> of the search space, with additional gains from selective multi-view refinement.
+            Fine-grained 3D functional grounding aims to identify the physical region that supports a natural-language task, such as the handle to pull, the button to press, or the control to adjust. This is particularly challenging in large 3D scenes, where task-relevant regions occupy only a small fraction of the scene and are easily confused with visually or geometrically similar candidates. We introduce <strong>ActFun3D</strong>, a task-conditioned coarse-to-fine framework that uses task semantics to reduce the effective search space before fine-grained grounding. Given a task, ActFun3D first extracts structured functional semantics describing the target, its context, affordance, and spatial constraints, and uses them to localize a high-recall candidate region over language-aligned 3D features. A trainable local 3D grounder then integrates local geometry, appearance, multi-view visual features, and task semantics to predict the task-relevant functional region at the point level. To further resolve ambiguous predictions, ActFun3D retrieves a compact set of informative posed RGB-D views and projects verified visual evidence back into 3D for multi-view refinement. Experiments on SceneFun3D show that ActFun3D achieves <strong>30.8 AP<sub>50</sub></strong> in fine-grained 3D functional grounding. Notably, task-conditioned narrowing retains <strong>94.2%</strong> of the target while reducing the effective search space to only <strong>15.9%</strong> of the scene, demonstrating the effectiveness of narrowing large 3D scenes before fine-grained grounding.
           </p>
         </div>
       </div>
@@ -629,8 +629,8 @@
 
     <div class="table-block">
       <p class="table-caption">
-        <strong>Main comparison on the SceneFun3D validation split.</strong>
-        Best results are shown in <strong>bold</strong>, and second-best results are <u>underlined</u>.
+        <strong>Main comparison on SceneFun3D split0.</strong>
+        All baselines are reproduced and evaluated under the same SceneFun3D protocol. Best results are shown in <strong>bold</strong>, and second-best results are <u>underlined</u>.
       </p>
       <div class="table-container">
         <table class="table is-fullwidth is-striped is-hoverable is-bordered is-narrow black-table">
@@ -677,7 +677,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>Whole Scene</td><td>100.0</td><td>100.0</td><td>1.0</td><td>1.4</td></tr>
+            <tr><td>Whole Scene</td><td>100.0</td><td>100.0</td><td>4.2</td><td>5.4</td></tr>
             <tr><td>Raw Task Query</td><td>24.6</td><td>80.8</td><td>10.7</td><td>8.9</td></tr>
             <tr><td>Functional Object Query</td><td>18.3</td><td>89.4</td><td>19.8</td><td>13.5</td></tr>
             <tr>
@@ -734,7 +734,7 @@
     <h2 class="title is-3 has-text-centered section-title">Multi-View Refinement Analysis</h2>
 
     <p class="table-caption">
-      <strong>Component ablation of multi-view visual refinement.</strong>
+      <strong>Component ablation and runtime of multi-view refinement.</strong>
       All variants start from the same initial 3D prediction and use the same geometry-guided view retrieval.
     </p>
     <div class="table-container">
@@ -748,14 +748,15 @@
             <th>AP<sub>50</sub> ↑</th>
             <th>AP<sub>25</sub> ↑</th>
             <th>mIoU ↑</th>
+            <th>Time (s)</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>Initial 3D</td><td>✗</td><td>–</td><td>✗</td><td>24.1</td><td>26.2</td><td>19.1</td></tr>
-          <tr><td>Visual Mask Refinement</td><td>✓</td><td>None</td><td>✗</td><td>25.7</td><td>29.0</td><td>20.7</td></tr>
-          <tr><td>Geometry Verification</td><td>✓</td><td>Geometry</td><td>✗</td><td>26.2</td><td>30.6</td><td>20.9</td></tr>
-          <tr><td>VLM Verification</td><td>✓</td><td>VLM</td><td>✗</td><td>29.6</td><td>38.3</td><td>22.4</td></tr>
-          <tr><td><strong>Full ActFun3D</strong></td><td><strong>✓</strong></td><td><strong>VLM</strong></td><td><strong>✓</strong></td><td class="best">30.8</td><td class="best">41.5</td><td class="best">23.0</td></tr>
+          <tr><td>Initial 3D</td><td>✗</td><td>–</td><td>✗</td><td>24.1</td><td>26.2</td><td>19.1</td><td>16.3</td></tr>
+          <tr><td>Visual Mask Refinement</td><td>✓</td><td>None</td><td>✗</td><td>25.7</td><td>29.0</td><td>20.7</td><td>58.5</td></tr>
+          <tr><td>Geometry Verification</td><td>✓</td><td>Geometry</td><td>✗</td><td>26.2</td><td>30.6</td><td>20.9</td><td>49.7</td></tr>
+          <tr><td>VLM Verification</td><td>✓</td><td>VLM</td><td>✗</td><td>29.6</td><td>38.3</td><td>22.4</td><td>112.0</td></tr>
+          <tr><td><strong>Full ActFun3D</strong></td><td><strong>✓</strong></td><td><strong>VLM</strong></td><td><strong>✓</strong></td><td class="best">30.8</td><td class="best">41.5</td><td class="best">23.0</td><td>126.6</td></tr>
         </tbody>
       </table>
     </div>
@@ -763,6 +764,7 @@
     <p class="section-note has-text-justified">
       Visual masks provide complementary 2D evidence beyond the initial 3D prediction, task-aware verification filters
       ambiguous observations, and visibility-aware positive/negative evidence fusion further improves the final grounding.
+      The full ActFun3D pipeline takes 126.6 s/task, compared with 16.3 s/task for the initial 3D prediction.
     </p>
   </div>
 </section>
