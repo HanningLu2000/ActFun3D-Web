@@ -36,7 +36,7 @@
   -->
 
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
   <link rel="image_src" href="./media/teaser.png">
@@ -342,6 +342,43 @@
       vertical-align: 0;
     }
 
+    /* Controlled comparisons use the existing result-panel styling. */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .comparison-grid > figure { margin: 0; }
+    .comparison-stage {
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      border: 1px solid #ededed;
+      border-radius: 7px;
+      background: #f7f7f7;
+    }
+    .comparison-stage video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .comparison-description {
+      margin: 0 auto 1rem;
+      max-width: 850px;
+      text-align: center;
+      font-size: .94rem;
+      line-height: 1.6;
+      color: #555;
+    }
+    .comparison-toolbar {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: .6rem;
+      margin-top: 1rem;
+    }
+    .comparison-toolbar .button { min-width: 130px; }
+
     details.analysis-details {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -389,17 +426,19 @@
       .results-explorer { padding: .82rem; }
       .black-table { font-size: .86rem; }
       .view-switch .button { min-width: 95px; }
+      .comparison-grid { grid-template-columns: 1fr; }
     }
   </style>
 
   <script type="importmap">
   {
     "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      "three": "./static/js/three/three.module.js",
+      "three/addons/": "./static/js/three/addons/"
     }
   }
   </script>
+  <script src="./static/js/comparisons.js" defer></script>
 </head>
 <body>
 
@@ -419,7 +458,6 @@
       </div>
 
       <div class="publication-links">
-        <!-- TODO: replace # with the anonymous repository URL. -->
         <a href="https://anonymous.4open.science/r/ActFun3D/README.md"
            class="external-link button is-normal is-rounded is-dark"
            target="_blank" rel="noopener noreferrer">
@@ -430,6 +468,10 @@
         <a href="#demo" class="button is-normal is-rounded is-dark">
           <span class="icon"><i class="fas fa-play"></i></span>
           <span>Demo</span>
+        </a>
+
+        <a href="#controlled-comparisons" class="button is-normal is-rounded is-dark">
+          <span>Controlled Comparisons</span>
         </a>
       </div>
     </div>
@@ -443,7 +485,7 @@
   <div class="container is-max-desktop">
     <div class="teaser-wrap">
       <figure class="image">
-        <img class="paper-figure" src="./media/teaser.png" alt="ActFun3D teaser figure">
+        <img class="paper-figure" src="./media/teaser.png" width="3975" height="1715" decoding="async" alt="ActFun3D teaser figure">
       </figure>
       <p class="figure-caption">
         <strong>Task-conditioned scene narrowing for fine-grained 3D functional grounding.</strong>
@@ -499,7 +541,7 @@
     <h2 class="title is-3 has-text-centered section-title">Method Overview</h2>
     <div class="method-wrap">
       <figure class="image">
-        <img class="paper-figure" src="./media/pipeline.png" alt="ActFun3D method overview">
+        <img class="paper-figure" src="./media/pipeline.png" width="5233" height="2266" loading="lazy" decoding="async" alt="ActFun3D method overview">
       </figure>
       <p class="figure-caption">
         <strong>Overview of ActFun3D.</strong> A structured functional query narrows the full scene to a compact,
@@ -621,6 +663,68 @@
 </section>
 
 <!-- ========================================================================
+     CONTROLLED COMPARISONS
+============================================================================ -->
+<section class="section compact-section" id="controlled-comparisons">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered section-title">Controlled Comparisons</h2>
+    <p class="section-note has-text-centered" style="max-width: 900px; margin: 0 auto 1.2rem;">
+      Inspect candidate-region selection, the contribution of learned local support,
+      and comparisons with direct foundation-model pipelines.
+    </p>
+
+    <div class="results-explorer" id="comparisonExplorer">
+      <div class="case-tabs" role="group" aria-label="Controlled comparison type">
+        <button type="button" class="case-tab is-active" data-comparison="regions" aria-pressed="true">Candidate Regions</button>
+        <button type="button" class="case-tab" data-comparison="support" aria-pressed="false">Local Grounder</button>
+        <button type="button" class="case-tab" data-comparison="foundation" aria-pressed="false">Foundation Models</button>
+      </div>
+
+      <div class="task-box">
+        <div class="task-kicker">Task</div>
+        <div class="task-text" id="comparisonTask" aria-live="polite">Open the left door of the wooden cabinet located directly to the right of the doorway.</div>
+      </div>
+      <p class="comparison-description" id="comparisonDescription">
+        Object-matched, non-semantic, and Structured candidate regions are shown alongside the full scene.
+      </p>
+
+      <div class="comparison-grid">
+        <figure class="result-panel">
+          <figcaption class="result-panel-title" data-comparison-title>Full Scene</figcaption>
+          <div class="comparison-stage">
+            <video data-comparison-video src="./media/comparisons/regions/full_scene.mp4" aria-label="Full Scene" muted loop playsinline controls preload="none"></video>
+          </div>
+        </figure>
+        <figure class="result-panel">
+          <figcaption class="result-panel-title" data-comparison-title>Object-matched</figcaption>
+          <div class="comparison-stage">
+            <video data-comparison-video src="./media/comparisons/regions/object_matched.mp4" aria-label="Object-matched" muted loop playsinline controls preload="none"></video>
+          </div>
+        </figure>
+        <figure class="result-panel">
+          <figcaption class="result-panel-title" data-comparison-title>Non-semantic matched</figcaption>
+          <div class="comparison-stage">
+            <video data-comparison-video src="./media/comparisons/regions/nonsemantic.mp4" aria-label="Non-semantic matched" muted loop playsinline controls preload="none"></video>
+          </div>
+        </figure>
+        <figure class="result-panel">
+          <figcaption class="result-panel-title" data-comparison-title>Structured</figcaption>
+          <div class="comparison-stage">
+            <video data-comparison-video src="./media/comparisons/regions/structured.mp4" aria-label="Structured" muted loop playsinline controls preload="none"></video>
+          </div>
+        </figure>
+      </div>
+
+      <div class="comparison-toolbar">
+        <button type="button" class="button is-small is-rounded is-dark" id="comparisonPlayback" aria-pressed="false">Play together</button>
+        <button type="button" class="button is-small is-rounded" id="comparisonRestart">Restart together</button>
+      </div>
+      <p class="legend-line" id="comparisonLegend"><span class="green-dot"></span>Green marks the retained candidate region.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
      QUANTITATIVE RESULTS
 ============================================================================ -->
 <section class="section compact-section">
@@ -630,7 +734,7 @@
     <div class="table-block">
       <p class="table-caption">
         <strong>Main comparison on SceneFun3D split0.</strong>
-        All baselines are reproduced and evaluated under the same SceneFun3D protocol. Best results are shown in <strong>bold</strong>, and second-best results are <u>underlined</u>.
+        All methods are evaluated under the same SceneFun3D protocol. Direct VLM–segmentation baselines use raw tasks and up to 12 views selected from the full RGB-D pool. Best results are shown in <strong>bold</strong>, and second-best results are <u>underlined</u>.
       </p>
       <div class="table-container">
         <table class="table is-fullwidth is-striped is-hoverable is-bordered is-narrow black-table">
@@ -650,6 +754,9 @@
             <tr><td>Fun3DU</td><td>No</td><td>16.9</td><td class="second">33.3</td><td>15.2</td></tr>
             <tr><td>AffordBot</td><td>Yes</td><td>20.9</td><td>24.8</td><td>14.4</td></tr>
             <tr><td>TASA</td><td>Yes</td><td class="second">26.9</td><td>28.6</td><td class="second">19.7</td></tr>
+            <tr><td>Qwen3.8-Max + SAM3</td><td>No</td><td>12.4</td><td>24.9</td><td>11.4</td></tr>
+            <tr><td>Qwen3.8-Max + SAM3.1</td><td>No</td><td>12.8</td><td>25.0</td><td>11.5</td></tr>
+            <tr><td>GPT-6 Sol + SAM3.1</td><td>No</td><td>14.6</td><td>27.3</td><td>12.6</td></tr>
             <tr>
               <td><strong>ActFun3D (Ours)</strong></td><td><strong>Yes</strong></td>
               <td class="best">30.8</td><td class="best">41.5</td><td class="best">23.0</td>
@@ -663,7 +770,7 @@
       <p class="table-caption">
         <strong>Effect of task-conditioned scene narrowing.</strong>
         Lower Search-Space Ratio (SSR) indicates a smaller retained region, while higher Target Retention (TR)
-        indicates better preservation of the functional target.
+        indicates better preservation of the functional target before budget sampling.
       </p>
       <div class="table-container">
         <table class="table is-fullwidth is-striped is-hoverable is-bordered is-narrow black-table">
@@ -702,7 +809,7 @@
 
     <div class="figure-wide">
       <figure class="image">
-        <img class="paper-figure" src="./media/figure5.png" alt="Additional qualitative comparison on SceneFun3D">
+        <img class="paper-figure" src="./media/figure5.png" width="3892" height="3811" loading="lazy" decoding="async" alt="Additional qualitative comparison on SceneFun3D">
       </figure>
       <p class="figure-caption">
         <strong>Additional qualitative comparison on SceneFun3D.</strong>
@@ -714,7 +821,7 @@
 
     <div class="figure-wide" style="margin-top: 2rem;">
       <figure class="image">
-        <img class="paper-figure" src="./media/figure6.png" alt="Additional scene narrowing and refinement visualizations">
+        <img class="paper-figure" src="./media/figure6.png" width="3601" height="3709" loading="lazy" decoding="async" alt="Additional scene narrowing and refinement visualizations">
       </figure>
       <p class="figure-caption">
         <strong>Additional visualizations of task-conditioned scene narrowing and multi-view refinement.</strong>
@@ -871,8 +978,7 @@
 <script>
 /* ===========================================================================
    EDIT ONLY THIS ARRAY TO CHANGE THE SIX REPRESENTATIVE CASES.
-   The six current task strings are placeholders based on representative
-   appendix examples; replace them with the exact prompts / file names you use.
+   These six task strings identify the existing representative examples.
 ============================================================================ */
 const CASES = [
   {
